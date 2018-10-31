@@ -57,9 +57,12 @@ app.post('/login', (req, res) => {
    // console.log(req.body);
 
     con.query("select * from account where username = '" + username + "' and password = '" + password + "'", (err, rows, fields) => {
+        console.log(rows[0]);
         if (err) throw err;
             if(rows.length > 0) {
                 res.json({
+                    username: rows[0]['username'],
+                    policemanID: rows[0]['policemanID'],
                     permission: 'GRANTED'
                 });
             } else {
@@ -70,10 +73,34 @@ app.post('/login', (req, res) => {
     })
 });
 
-app.post('/save-message', (req, res) => {
-    console.log(req.body);
-    const message = req.body.message;
+app.post('/add-fines', (req, res) => {
+    console.log(req.body.fines);
+    const fines = req.body.fines;
+    fines.forEach(fine => {
+        con.query("", (err, rows, fields) => {
+            if (err) throw err;
+
+            if (rows.length > 0) {
+                res.json({
+                    desp: "FINE ADDED"
+                });
+            }
+        })
+    })
     
+});
+
+app.get('/get-fines', (req, res) => {
+    con.query("select * from fine", (err, rows, fields) => {
+        if (err) throw err;
+            if(rows.length > 0) {
+                res.json({
+                    fines: rows
+                })
+            } else {
+                
+            }
+    })
 })
 
 
