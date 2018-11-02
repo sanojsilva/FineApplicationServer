@@ -31,22 +31,20 @@ con.connect((err) => {
 
 
 app.post('/validate-code', (req, res) => {
-    console.log(req.body);
-    res.json({
-        validated: true
-    });
-    // con.query("select * from account where username = '" + username + "' and password = '" + password + "'", (err, rows, fields) => {
-    //     if (err) throw err;
-    //         if(rows.length > 0) {
-    //             res.json({
-    //                 permission: 'GRANTED'
-    //             });
-    //         } else {
-    //             res.json({
-    //                 permission: "ACCESS DENIED"
-    //             });
-    //         }
-    // })
+    let licenseNo = req.body.code;
+    con.query("select * from licence_master where linenceNumber = '" + licenseNo + "'", (err, rows, fields) => {
+        if (err) throw err;
+            if(rows.length > 0) {
+                res.json({
+                    validated: true,
+                    data: rows[0]
+                });
+            } else {
+                res.json({
+                    validated: false
+                });
+            }
+    })
 });
 
 
@@ -75,19 +73,39 @@ app.post('/login', (req, res) => {
 
 app.post('/add-fines', (req, res) => {
     const policeman = req.body.policeman;
+    const administrativeNo = req.body.administrativeNo;
+    console.log(administrativeNo);
     const fines = req.body.fines;
+    var someDate = new Date();
+    var numberOfDaysToAdd = 6;
+    someDate.setDate(someDate.getDate() + numberOfDaysToAdd);
+
+    var dd = someDate.getDate();
+    var mm = someDate.getMonth() + 1;
+    var y = someDate.getFullYear();
+
+
     let date = new Date().toJSON().slice(0, 10);
+    let expDate = y + '/' + mm + '/' + dd;
 
-    fines.forEach(fine => {
-        con.query("insert into finesheet_master(policemanID, dateOfIssue, dateOfExpiry) values(" + policeman.policemanID + ", '" + date + "', '" + date + "')", (err, rows, fields) => {
-            if (err) throw err;
 
-            if (rows.length > 0) {
-                res.json({
-                    desp: "FINE ADDED"
-                });
-            }
-        })
+    con.query("insert into finesheet_master(policemanID, dateOfIssue, dateOfExpiry, administativeNumber) values(" + policeman.policemanID + ", '" + date + "', '" + expDate + "', '" + administrativeNo + "')", (err, row, fields) => {
+        if (err) throw err;
+        if (row.affectedRows > 0) {
+            let finesheetNo = row.insertId;
+            
+            fines.forEach(fine => {
+                
+                con.query("insert into finesheet_header(finesheetNumber, fineNo) values(" + finesheetNo + ", " + fine.no + ")", (err, rows, fields) => {
+                        if (err) throw err;
+
+                })
+            })
+
+            res.json({
+                desp: "FINE ADDED"
+            });
+        }
     })
     
 });
@@ -99,6 +117,23 @@ app.get('/get-fines', (req, res) => {
                 res.json({
                     fines: rows
                 })
+            } else {
+                
+            }
+    })
+})
+
+app.get('/get-history', (req, res) => {
+
+    const administrativeNo = req.query.administrativeNo;
+    
+    con.query("select * from finesheet_master where administativeNumber = '" + administrativeNo + "'", (err, rows, fields) => {
+        if (err) throw err;
+            if(rows.length > 0) {
+                res.json({
+                    data: rows
+                });
+                //console.log(rows);
             } else {
                 
             }
